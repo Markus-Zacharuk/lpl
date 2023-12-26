@@ -180,9 +180,9 @@ rule IXor2(A -> !B, !B -> A) => A ^ B {
     21 = A ^ B : IXor(20);
 }
 
-rule EXor2(A ^ B) => A <-> !B, !A <-> B {
+//rule EXor2(A ^ B) => A <-> !B, !A <-> B {
 
-}
+//}
 
 rule Barbara(A -> B, B -> C) => A -> C {
     1h = A -> {
@@ -192,8 +192,8 @@ rule Barbara(A -> B, B -> C) => A -> C {
     4 = A -> C : It(3);
 }
 
-rule BarbaraXor(A ^ B, B ^ C) => A <-> C {
-    1h = A -> {
+//rule BarbaraXor(A ^ B, B ^ C) => A <-> C {
+//    1h = A -> {
 
-    }
-}
+//    }
+//}
