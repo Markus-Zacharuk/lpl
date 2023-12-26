@@ -1,0 +1,199 @@
+// Those are basic rules
+axiom It(A) => A;
+axiom IAnd(A, B) => A & B, B & A;
+axiom EAnd(A & B) => A, B;
+axiom IOr(A) => A | B, B | A;
+axiom EOr(A | B, A -> C, B -> C) => C;
+axiom EIf(A -> B, A) => B;
+axiom INot(A -> B & !B) => !A;
+axiom ENot(!!A) => A;
+
+// Introduction of new operators
+axiom IEq(A -> B, B -> A) => A <-> B;
+axiom EEq(A <-> B) => A -> B, B -> A;
+
+axiom IXor(!(A <-> B)) => A ^ B;
+axiom EXor(!(A ^ B)) => A <-> B;
+
+axiom INif(!(A -> B)) => A !-> B;
+axiom ENif(!(A !-> B)) => A -> B;
+
+axiom IRevIf(A -> B) => B <- A;
+axiom ERevIf(A <- B) => B -> A;
+
+axiom IRevNif(!(A <- B)) => A !<- B;
+axiom ERevNif(!(A !<- B)) => A <- B;
+
+axiom INor(!(A | B)) => A !| B;
+axiom ENor(!(A !| B)) => A | B;
+
+axiom INand(!(A & B)) => A !& B;
+axiom ENand(!(A !& B)) => A & B;
+
+rule Shakespeare() => A | !A {
+    1h = !(A | !A) -> {
+        2h = A  -> {
+            3 = A | !A : IOr(2h);
+            4 = (A | !A) & !(A | !A) : IAnd(3, 1h);
+        }
+        5 = !A : INot(4);
+        6h = !A -> {
+            7 = A | !A : IOr(6h);
+            8 = (A | !A) & !(A | !A) : IAnd(7, 1h);
+        }
+        9 = !!A : INot(8);
+        10 = A : ENot(9);
+        11 = A & !A : IAnd(10, 5);
+    }
+    12 = !!(A | !A) : INot(11);
+    13 = A | !A : ENot(12);
+}
+
+rule ModusTollens(A -> B, !B) => !A {
+    1h = A -> {
+        2 = B : EIf(arg1, 1h);
+        3 = B & !B : IAnd(2, arg2);
+    }
+    4 = !A : INot(3);
+}
+
+rule ModusPonendoTollens(!(A & B), A) => !B {
+    1h = B -> {
+        2 = A & B : IAnd(arg2, 1h);
+        3 = (A & B) & !(A & B) : IAnd(2, arg1);
+    }
+    4 = !B : INot(3);
+}
+
+rule ModusTollendoPonens(A | B, !A) => B {
+    1h = A -> {
+        2h = !B -> {
+            3 = A & !A : IAnd(1h, arg2);
+        }
+        4 = !!B : INot(3);
+        4a = B : ENot(4);
+    }
+    5h = B -> {
+        6 = B : It(5h);
+    }
+    7 = B : EOr(arg1, 4a, 6);
+}
+
+rule Contraposition(A -> B) => !B -> !A {
+    1h = !B -> {
+        2 = !A : ModusTollens(arg1, 1h);
+    }
+    3 = !B -> !A : It(2);
+}
+
+rule DeMorganAndR(!A | !B) => !(A & B) {
+    2h = !A -> {
+        3h = A & B -> {
+            4 = A : EAnd(3h);
+            5 = A & !A : IAnd(4, 2h);
+        }
+        6 = !(A & B) : INot(5);
+    }
+    7h = !B -> {
+        8h = A & B -> {
+            9 = B : EAnd(8h);
+            10 = B & !B : IAnd(9, 7h);
+        }
+        11 = !(A & B) : INot(10);
+    }
+    12 = !(A & B) : EOr(arg1, 6, 11);
+}
+
+rule DeMorganAnd(!(A & B)) => !A | !B {
+    1 = A | !A : Shakespeare();
+    2h = A -> {
+        3 = !B : ModusPonendoTollens(arg1, 2h);
+        4 = !A | !B : IOr(3);
+    }
+    5h = !A -> {
+        6 = !A | !B : IOr(5h);
+    }
+    7 = !A | !B : EOr(1, 4, 6);
+}
+
+rule DeMorganOr(!(A | B)) => !A & !B {
+    // It's easy to use DeMorganAnd and Contraposition. Let's try it with less. This way they aren't co-dependent.
+    1h = !(!A & !B) -> {
+        2 = A | !A : Shakespeare();
+        3h = A -> {
+            4 = A | B : IOr(3h);
+        }
+        5h = !A -> {
+            6 = !!B : ModusPonendoTollens(1h, 5h);
+            6a = B : ENot(6);
+            7 = A | B : IOr(6a);
+        }
+        8 = A | B : EOr(2, 4, 7);
+        9 = A | B & !(A | B) : IAnd(8, arg1);
+    }
+    10 = !!(!A & !B) : INot(9);
+    11 = !A & !B : ENot(10);
+}
+
+rule DeMorganOrR(!A & !B) => !(A | B) {
+    1h = A | B -> {
+        2 = !A : EAnd(arg1);
+        3 = B : ModusTollendoPonens(1h, 2);
+        4 = !B : EAnd(arg1);
+        5 = B & !B : IAnd(3, 4);
+    }
+    6 = !(A | B) : INot(5);
+}
+
+rule ExFalsoQuodlibet(A, !A) => B {
+    1h = !B -> {
+        2 = A & !A : IAnd(arg1, arg2);
+    }
+    3 = !!B : INot(2);
+    4 = B : ENot(3);
+}
+
+rule IXor2(A -> !B, !B -> A) => A ^ B {
+    1 = A <-> !B : IEq(arg1, arg2);
+    2h = (A <-> B) -> {
+        3h = A -> {
+            4 = A -> !B : EEq(1);
+            5 = !B : EIf(4, 3h);
+            6 = A -> B : EEq(2h);
+            7 = B : EIf(6, 3h);
+            8 = B & !B : IAnd(7, 5);
+        }
+        9 = !A : INot(8);
+        10h = !A -> {
+            11 = !B -> A : EEq(1);
+            12 = !!B : ModusTollens(4, 10h);
+            13 = B : ENot(12);
+            14 = B -> A : EEq(2h);
+            15 = !B : EIf(14, 10h);
+            16 = B & !B : IAnd(13, 15);
+        }
+        17 = !!A : INot(8);
+        18 = A : ENot(17);
+        19 = A & !A : IAnd(18, 9);
+    }
+    20 = !(A <-> B) : EIf(19);
+    21 = A ^ B : IXor(20);
+}
+
+rule EXor2(A ^ B) => A <-> !B, !A <-> B {
+
+}
+
+rule Barbara(A -> B, B -> C) => A -> C {
+    1h = A -> {
+        2 = B : EIf(arg1, 1h);
+        3 = C : EIf(arg2, 2);
+    }
+    4 = A -> C : It(3);
+}
+
+rule BarbaraXor(A ^ B, B ^ C) => A <-> C {
+    1h = A -> {
+
+    }
+}
